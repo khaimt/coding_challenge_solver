@@ -1,0 +1,4 @@
+{
+    "algo_input": "Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.\n\nYou may assume that each input would have exactly one solution, and you may not use the same element twice.\n\nYou can return the answer in any order.",
+    "solution_py": "class Solution:\n    def twoSum(self, nums: List[int], target: int) -> List[int]:\n        dic = {}\n        for i, num in enumerate(nums):\n            diff = target - num\n            if diff in dic:\n                return [dic[diff], i]\n            dic[num] = i"
+}
