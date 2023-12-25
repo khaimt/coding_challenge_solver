@@ -44,15 +44,19 @@ class PrompTest(unittest.TestCase):
         unmasked_token_ids = [label for label in labels if label != -100]
         unmasked_text = tokenizer.decode(unmasked_token_ids)
         # First make sure that unmasked_text endswith stop_token
+        print("umasked text: ")
+        print(unmasked_text)
         end_with_stop_token = False
         for token in template.get_stop_tokens_for_generation():
             if unmasked_text.endswith(token):
                 unmasked_text = unmasked_text[: -len(token)].strip()
                 end_with_stop_token = True
                 break
+        # remove ``` if exist
         self.assertTrue(end_with_stop_token)
         # make sure that unmasked_text == self.test_case["solution_py"]
-        self.assertEqual(unmasked_text, self.test_case["solution_py"])
+        unmasked_text = unmasked_text.strip("```")  # remove ``` if exists
+        self.assertEqual(unmasked_text.strip(), self.test_case["solution_py"].strip())
 
 
 if __name__ == "__main__":

@@ -15,11 +15,11 @@ class CodellamaTemplate(PromptTemplate):
         prompt_str = (
             f"[INST] Write code to solve the following coding problem that obeys"
             f"the constraints and passes the example test cases."
-            f"Please wrap your code answer using ```:\n{algo_input}\n[/INST]"
+            f"Please wrap your code answer using ```:\n{algo_input}\n[/INST]```\n"
         )
         algo_solution = inputs.get("solution_py", None)
         if algo_solution:
-            prompt_str += f"{algo_solution}</s>"
+            prompt_str += f"{algo_solution.strip()}\n```</s>"
         return prompt_str
 
     def get_response_prefixs(self) -> List[str]:
@@ -28,4 +28,4 @@ class CodellamaTemplate(PromptTemplate):
         Returns:
             List[str]: _description_
         """
-        return ["\n[/INST]"]
+        return ["\n[/INST]```\n"]
