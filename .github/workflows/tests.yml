@@ -36,7 +36,7 @@ jobs:
         key: ${{ runner.os }}-pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
     - name: Run pre-commit
       run: pre-commit run --all-files
-      
+
     - name: Test with pytest
       run: |
-        pytest
+        python -m pytest
