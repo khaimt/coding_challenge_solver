@@ -15,7 +15,7 @@ class CodellamaTemplate(PromptTemplate):
         prompt_str = (
             f"[INST] Write code to solve the following coding problem that obeys"
             f"the constraints and passes the example test cases."
-            f"Please wrap your code answer using ```:\n{algo_input}\n[/INST]```\n"
+            f"Please wrap your code answer using ```:\n{algo_input}\n[/INST]```python\n"
         )
         algo_solution = inputs.get("solution_py", None)
         if algo_solution:
@@ -28,4 +28,4 @@ class CodellamaTemplate(PromptTemplate):
         Returns:
             List[str]: _description_
         """
-        return ["\n[/INST]```\n"]
+        return ["\n[/INST]```python\n"]
