@@ -1,4 +1,4 @@
-from prompt_template import get_prompt_template_by_name, get_all_template_names, PromptTemplate
+from prompt_template import get_prompt_template_by_name, get_all_template_names
 import unittest
 import os
 import json
