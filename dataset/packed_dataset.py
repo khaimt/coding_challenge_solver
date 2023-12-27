@@ -1,22 +1,27 @@
-from typing import List, Dict, Any
 import torch
+from typing import List, Dict
 from torch.utils.data import Dataset
+from transformers import PreTrainedTokenizerBase
 
 
-def merge_data_points_by_length(lengths: List[int], max_length: int) -> List[List[int]]:
-    """Merge data points into groups (each group is a new data point), will be used by PackedDataset, to reduce number of data points in training.
+def merge_data_points_by_length(lengths: List[int], max_length: int, sort_by_length: bool = True) -> List[List[int]]:
+    """Merge data points into groups (each group is a new data point),
+    will be used by PackedDataset, to reduce number of data points in training.
     Given lengths of data points, we merge them into groups such that the sum of lengths
     in each group is less than max_length. This is known as: https://en.wikipedia.org/wiki/Bin_packing_problem
     Here is the greedy algorithm
     Args:
         lengths (List[int]): _description_
         max_length (int): _description_
+        sort_by_length (boolean): sort by length before merging them to reduce number of data group
 
     Returns:
         _type_: groups of indices: [[index1, index2, ...], [], ...]
     """
     items = [{"length": length, "index": i} for i, length in enumerate(lengths)]
-    items = sorted(items, key=lambda x: x["index"])
+
+    if sort_by_length:
+        items = sorted(items, key=lambda x: x["length"])
     merges = []
     current_sum = 0
     current_list = []
@@ -38,9 +43,9 @@ def merge_data_points_by_length(lengths: List[int], max_length: int) -> List[Lis
     return result
 
 
-def pack_data_points_FA(
-    data_points: List[Dict], tokenizer: Any, pack_length: int
-) -> Dict:
+def pack_data_points_fa(data_points: List[Dict],
+                        tokenizer: PreTrainedTokenizerBase,
+                        pack_length: int) -> Dict:
     """_summary_
 
     Args:
@@ -58,22 +63,21 @@ def pack_data_points_FA(
 
     for index, item in enumerate(data_points):
         input_ids += item["input_ids"]
-        # assert item["labels"][0] == -100 # This is to make sure that the first token won't be included in computing loss
         labels = list(item["labels"])
         labels[0] = -100
         label_ids += labels
         lengths.append(len(item["input_ids"]))
         attention_mask += [index + 1 for _ in range(len(item["input_ids"]))]
 
-    pad_leng = pack_length - len(input_ids)  # padding to model_max_length
+    pad_length = pack_length - len(input_ids)  # padding to model_max_length
     if tokenizer.padding_side == "right":
-        input_ids = input_ids + [tokenizer.pad_token_id for _ in range(pad_leng)]
-        label_ids = label_ids + [-100 for _ in range(pad_leng)]
-        attention_mask = attention_mask + [0 for _ in range(pad_leng)]
+        input_ids = input_ids + [tokenizer.pad_token_id for _ in range(pad_length)]
+        label_ids = label_ids + [-100 for _ in range(pad_length)]
+        attention_mask = attention_mask + [0 for _ in range(pad_length)]
     else:
-        input_ids = [tokenizer.pad_token_id for _ in range(pad_leng)] + input_ids
-        label_ids = [-100 for _ in range(pad_leng)] + label_ids
-        attention_mask = [0 for _ in range(pad_leng)] + attention_mask
+        input_ids = [tokenizer.pad_token_id for _ in range(pad_length)] + input_ids
+        label_ids = [-100 for _ in range(pad_length)] + label_ids
+        attention_mask = [0 for _ in range(pad_length)] + attention_mask
 
     assert len(input_ids) == len(label_ids) == len(attention_mask) == pack_length
     return {
@@ -86,7 +90,7 @@ def pack_data_points_FA(
 
 
 class PackedDataset(Dataset):
-    def __init__(self, dataset: Dataset, tokenizer: Any, pack_length: int) -> None:
+    def __init__(self, dataset: Dataset, tokenizer: PreTrainedTokenizerBase, pack_length: int) -> None:
         super().__init__()
         self.pack_length = pack_length
         self.tokenizer = tokenizer
@@ -98,12 +102,11 @@ class PackedDataset(Dataset):
         for i in range(size):
             data_point = dataset[i]
             input_length = torch.sum(data_point["attention_mask"]).item()
-            n_data_point = {}
-            n_data_point["input_ids"] = (
+            n_data_point = {"input_ids": (
                 data_point["input_ids"][:input_length]
                 if tokenizer.padding_side == "right"
                 else data_point["input_ids"][-input_length:]
-            )
+            )}
 
             if "labels" not in data_point:  # create labels if not existed
                 labels = n_data_point["input_ids"].clone()
@@ -131,7 +134,7 @@ class PackedDataset(Dataset):
     def __getitem__(self, i) -> Dict[str, torch.Tensor]:
         group = self.groups[i]
         group_data_points = [self.data_points[index] for index in group]
-        return pack_data_points_FA(group_data_points, self.tokenizer, self.pack_length)
+        return pack_data_points_fa(group_data_points, self.tokenizer, self.pack_length)
 
     def stat(self):
         print(

@@ -25,7 +25,7 @@ class ModelArguments:
         default=4096,
         metadata={"help": "Maximum sequence length. Sequences will be right padded (and possibly truncated)."},
     )
-    qlora: bool = field(default=False, metadata={"help": "whether using qlora or not"})
+    qlora: bool = field(default=True, metadata={"help": "whether using qlora or not"})
 
 
 @dataclass
