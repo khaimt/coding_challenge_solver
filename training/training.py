@@ -1,15 +1,30 @@
+import peft
 import torch
 import random
+from typing import List
 import bitsandbytes as bnb
-from peft import LoraConfig
-from typing import Union, List
-from transformers import BitsAndBytesConfig
-from transformers import PreTrainedTokenizerBase, AutoTokenizer, PreTrainedModel
-from transformers import AutoModelForCausalLM
-from training.arguments import TokenizerArguments, ModelArguments, DataArguments, TrainingArguments
-from peft import prepare_model_for_kbit_training, get_peft_model
-from packing.mistral_monkey_patch import MistralForCausalLM
+
+from transformers import (
+    Trainer,
+    AutoTokenizer,
+    PreTrainedModel,
+    HfArgumentParser,
+    BitsAndBytesConfig,
+    PreTrainedTokenizer,
+    AutoModelForCausalLM,
+)
+
+from training.arguments import (
+    ModelArguments,
+    DataArguments,
+    TrainingArguments,
+    TokenizerArguments
+)
+from dataset.algo_dataset import AlgoDataset
+from dataset.packed_dataset import PackedDataset
 from packing.llama_monkey_patch import LlamaForCausalLM
+from packing.mistral_monkey_patch import MistralForCausalLM
+from prompt_template.code_llama_template import CodellamaTemplate
 
 
 def set_seed(seed: int = 100) -> None:
@@ -43,7 +58,7 @@ def find_all_linear_names(model):
     return list(lora_module_names)
 
 
-def config_peft(modules: List) -> LoraConfig:
+def config_peft(modules: List) -> peft.LoraConfig:
     """
     Configure PEFT for QLora training
     Args:
@@ -53,7 +68,7 @@ def config_peft(modules: List) -> LoraConfig:
         LoraConfig
 
     """
-    return LoraConfig(
+    return peft.LoraConfig(
         r=16,
         lora_alpha=64,
         target_modules=modules,
@@ -78,7 +93,7 @@ def print_trainable_parameters(model):
         f"Trainable params: {trainable_params} || all params: {all_param} || trainable%: {100 * trainable_params / all_param}")
 
 
-def load_tokenizer(tokenizer_args: TokenizerArguments) -> PreTrainedTokenizerBase:
+def load_tokenizer(tokenizer_args: TokenizerArguments) -> PreTrainedTokenizer:
     """
     Loads and config pre-trained tokenizer
     Args:
@@ -87,7 +102,7 @@ def load_tokenizer(tokenizer_args: TokenizerArguments) -> PreTrainedTokenizerBas
     Returns:
 
     """
-    tokenizer = AutoTokenizer.from_pretrained(tokenizer_args.model_id)
+    tokenizer = AutoTokenizer.from_pretrained(tokenizer_args._model_name_or_path)
     tokenizer.pad_token_id = tokenizer.eos_token_id
     tokenizer.padding_side = tokenizer_args.padding_side
 
@@ -98,31 +113,29 @@ def load_tokenizer(tokenizer_args: TokenizerArguments) -> PreTrainedTokenizerBas
 
 
 def load_model(model_args: ModelArguments,
-               data_args: DataArguments,
                training_args: TrainingArguments,
-               tokenizer: PreTrainedTokenizerBase) -> PreTrainedModel:
+               tokenizer: PreTrainedTokenizer) -> PreTrainedModel:
     """
     Loads and config pre-trained model
     Args:
         model_args:
-        data_args:
         training_args:
         tokenizer:
 
     Returns:
 
     """
-    if data_args.packing:
+
+    # packing data while training
+    if training_args.packing:
         if model_args.model_type == "mistral":
             model_class = MistralForCausalLM
         elif model_args.model_type == "llama":
             model_class = LlamaForCausalLM
         elif model_args.model_type == "mixtral":
             model_class = LlamaForCausalLM
-
         else:
             model_class = MistralForCausalLM
-
     else:
         model_class = AutoModelForCausalLM
 
@@ -138,11 +151,10 @@ def load_model(model_args: ModelArguments,
     model.gradient_checkpointing_enable()
 
     if model_args.qlora and model_args.use_lora:
-        model = prepare_model_for_kbit_training(model)
+        model = peft.prepare_model_for_kbit_training(model)
     if model_args.use_lora:
-        print("USE LORA TRAINING, START FINDING LINEAR LAYERS NOW")
         modules = find_all_linear_names(model)
-        model = get_peft_model(model, config_peft(modules))
+        model = peft.get_peft_model(model, config_peft(modules))
 
     # Configure the pad token in the model
     model.config.pad_token_id = tokenizer.pad_token_id
@@ -154,4 +166,52 @@ def load_model(model_args: ModelArguments,
 
 
 def train():
-    pass
+    set_seed(100)
+
+    arg_parser = HfArgumentParser((ModelArguments, DataArguments, TrainingArguments, TokenizerArguments))
+
+    model_args, data_args, training_args, tokenizer_args = arg_parser.parse_args_into_dataclasses()
+    print("model_args: ", model_args)
+    print("data_args: ", data_args)
+    print("training_args: ", training_args)
+    print("tokenizer_args: ", tokenizer_args)
+    tokenizer_args._model_name_or_path = model_args.model_name_or_path
+    # load tokenizer
+    tokenizer = load_tokenizer(tokenizer_args)
+    prompt_template = CodellamaTemplate()
+
+    train_ds = AlgoDataset(tokenizer=tokenizer,
+                           data_path=data_args.train_path,
+                           prompt_template=prompt_template,
+                           max_seq_len=model_args.model_max_length,
+                           batch_size=training_args.per_device_train_batch_size)
+    valid_ds = AlgoDataset(tokenizer=tokenizer,
+                           data_path=data_args.validation_path,
+                           max_seq_len=model_args.model_max_length,
+                           prompt_template=prompt_template,
+                           batch_size=training_args.per_device_eval_batch_size)
+    if training_args.packing:
+        train_ds = PackedDataset(dataset=train_ds,
+                                 tokenizer=tokenizer,
+                                 pack_length=model_args.model_max_length)
+
+        valid_ds = PackedDataset(dataset=valid_ds,
+                                 tokenizer=tokenizer,
+                                 pack_length=model_args.model_max_length)
+
+    # model = load_model(model_args=model_args,
+    #                    training_args=training_args,
+    #                    tokenizer=tokenizer)
+    #
+    # trainer = Trainer(
+    #     model=model,
+    #     train_dataset=train_ds,
+    #     eval_dataset=valid_ds,
+    #     args=training_args,
+    # )
+
+    # trainer.train()
+
+
+if __name__ == '__main__':
+    train()

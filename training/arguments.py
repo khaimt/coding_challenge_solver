@@ -5,8 +5,8 @@ from dataclasses import dataclass, field
 
 @dataclass
 class TokenizerArguments:
-    model_id: Optional[str] = field(default="codellama/CodeLlama-7b-Instruct-hf",
-                                    metadata={"help": "Tokenizer model name on HuggingFace"})
+    _model_name_or_path: Optional[str] = field(default="codellama/CodeLlama-7b-Instruct-hf",
+                                               metadata={"help": "Tokenizer model name on HuggingFace"})
 
     padding_side: Optional[str] = field(default="left",
                                         metadata={"help": "Setting padding side is left or right"})
@@ -32,10 +32,16 @@ class ModelArguments:
 class DataArguments:
     train_path: str = field(default="", metadata={"help": "Path to the training data."})
     validation_path: str = field(default="", metadata={"help": "Path to the evaluation data"})
-    packing: bool = field(default=False, metadata={"help": "Whether use packing or not"})
 
 
 @dataclass
 class TrainingArguments(TrainingArguments):
+    per_device_train_batch_size: int = field(default=8,
+                                             metadata={
+                                                 "help": "The batch size per GPU/XPU/TPU/MPS/NPU core/CPU for training"})
+    per_device_eval_batch_size: int = field(default=8,
+                                            metadata={
+                                                "help": "The batch size per GPU/XPU/TPU/MPS/NPU core/CPU for evaluation"})
     cache_dir: Optional[str] = field(default=None)
     optim: str = field(default="adamw_torch")
+    packing: bool = field(default=False, metadata={"help": "Whether use packing or not"})

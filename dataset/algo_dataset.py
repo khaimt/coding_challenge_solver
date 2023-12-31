@@ -6,13 +6,16 @@ from prompt_template.base_template import PromptTemplate
 
 
 class AlgoDataset(Dataset):
-    def __init__(self, data_path: str, batch_size: int,
+    def __init__(self, data_path: str,
                  tokenizer: PreTrainedTokenizer,
-                 prompt_template: PromptTemplate):
+                 prompt_template: PromptTemplate,
+                 batch_size: int = 8,
+                 max_seq_len: int = None):
         super().__init__()
         self.data_path = data_path
         self.tokenizer = tokenizer
         self.batch_size = batch_size
+        self.max_seq_len = max_seq_len
         self.prompt_template = prompt_template
         self.algo_data = self.load_algo_dataset()
         print("Length of algo dataset: ", len(self.algo_data))
@@ -48,11 +51,10 @@ class AlgoDataset(Dataset):
         for idx in range(0, len(self.algo_data), self.batch_size):
             print("Processing batch", idx)
             batch_inputs = self.algo_data[idx: idx + self.batch_size]
-            print(batch_inputs)
             training_data.extend(self.prompt_template.prepare_training_inputs(batch_inputs=batch_inputs,
                                                                               tokenizer=self.tokenizer,
                                                                               padding="longest",
-                                                                              max_length=None,
+                                                                              max_length=self.max_seq_len,
                                                                               return_tensor=True))
 
         return training_data
@@ -80,6 +82,5 @@ if __name__ == '__main__':
         print(batch)
         print(batch['labels'].size())
         break
-
 
     from transformers import AutoTokenizer, DataCollatorWithPadding
