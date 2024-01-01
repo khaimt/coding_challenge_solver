@@ -143,7 +143,7 @@ def load_model(model_args: ModelArguments,
     model = model_class.from_pretrained(model_args.model_name_or_path,
                                         device_map={"": 0},
                                         trust_remote_code=True,
-                                        use_flash_attention_2=True,
+                                        # use_flash_attention_2=True,
                                         quantization_config=quantization_config)
 
     model.resize_token_embeddings(len(tokenizer))
@@ -210,7 +210,7 @@ def train():
         args=training_args,
     )
 
-    # trainer.train()
+    trainer.train()
 
 
 if __name__ == '__main__':

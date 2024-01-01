@@ -49,7 +49,6 @@ class AlgoDataset(Dataset):
         print("Converting raw data to list of dictionaries...")
         training_data = []
         for idx in range(0, len(self.algo_data), self.batch_size):
-            print("Processing batch", idx)
             batch_inputs = self.algo_data[idx: idx + self.batch_size]
             training_data.extend(self.prompt_template.prepare_training_inputs(batch_inputs=batch_inputs,
                                                                               tokenizer=self.tokenizer,
@@ -71,16 +70,18 @@ if __name__ == '__main__':
 
     print(_tokenizer.model_max_length)
     codellama_template = CodellamaTemplate()
-    algo_dataset = AlgoDataset(data_path="../data/algorithm.json",
+    algo_dataset = AlgoDataset(data_path="../data/algorithm_train.json",
                                batch_size=4,
                                tokenizer=_tokenizer,
                                prompt_template=codellama_template)
 
-    dataloader = DataLoader(dataset=algo_dataset, batch_size=4, shuffle=False)
+    dataloader = DataLoader(dataset=algo_dataset, batch_size=2, shuffle=False)
 
     for batch in dataloader:
         print(batch)
         print(batch['labels'].size())
+        print(batch['input_ids'].size())
+        print(batch['attention_mask'].size())
         break
 
     from transformers import AutoTokenizer, DataCollatorWithPadding
