@@ -199,16 +199,16 @@ def train():
                                  tokenizer=tokenizer,
                                  pack_length=model_args.model_max_length)
 
-    # model = load_model(model_args=model_args,
-    #                    training_args=training_args,
-    #                    tokenizer=tokenizer)
-    #
-    # trainer = Trainer(
-    #     model=model,
-    #     train_dataset=train_ds,
-    #     eval_dataset=valid_ds,
-    #     args=training_args,
-    # )
+    model = load_model(model_args=model_args,
+                       training_args=training_args,
+                       tokenizer=tokenizer)
+
+    trainer = Trainer(
+        model=model,
+        train_dataset=train_ds,
+        eval_dataset=valid_ds,
+        args=training_args,
+    )
 
     # trainer.train()
 
