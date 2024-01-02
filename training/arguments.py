@@ -8,7 +8,7 @@ class TokenizerArguments:
     _model_name_or_path: Optional[str] = field(default="codellama/CodeLlama-7b-Instruct-hf",
                                                metadata={"help": "Tokenizer model name on HuggingFace"})
 
-    padding_side: Optional[str] = field(default="left",
+    padding_side: Optional[str] = field(default="right",
                                         metadata={"help": "Setting padding side is left or right"})
 
     added_tokens: Optional[Union[List[str], None]] = field(default=None,

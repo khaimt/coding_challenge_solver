@@ -48,8 +48,8 @@ class AlgoDataset(Dataset):
         """
         print("Converting raw data to list of dictionaries...")
         training_data = []
-        for idx in range(0, len(self.algo_data), self.batch_size):
-            batch_inputs = self.algo_data[idx: idx + self.batch_size]
+        for idx in range(0, len(self.algo_data), 1):
+            batch_inputs = self.algo_data[idx: idx + 1]
             training_data.extend(self.prompt_template.prepare_training_inputs(batch_inputs=batch_inputs,
                                                                               tokenizer=self.tokenizer,
                                                                               padding="longest",
@@ -75,7 +75,9 @@ if __name__ == '__main__':
                                tokenizer=_tokenizer,
                                prompt_template=codellama_template)
 
-    dataloader = DataLoader(dataset=algo_dataset, batch_size=2, shuffle=False)
+    dataloader = DataLoader(dataset=algo_dataset,
+                            batch_size=2,
+                            shuffle=False)
 
     for batch in dataloader:
         print(batch)

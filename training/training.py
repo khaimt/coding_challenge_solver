@@ -1,7 +1,7 @@
 import peft
 import torch
 import random
-from typing import List
+from typing import *
 import bitsandbytes as bnb
 
 from transformers import (
@@ -165,6 +165,56 @@ def load_model(model_args: ModelArguments,
     return model
 
 
+def collate_function(examples: List[Dict],
+                     tokenizer: PreTrainedTokenizer,
+                     max_length: int = 4096
+                     ) -> Dict:
+    """
+    Prepare dataset for training Caulsal Language model
+    Args:
+        examples: List of dictionaries, For example: [{"input_ids": "", "labels": ""}]
+        tokenizer: tokenizer correspond to LLM
+        max_length: int
+
+    Returns:
+
+    """
+    max_seq_len = 0
+
+    for sample in examples:
+        input_ids = sample["input_ids"]
+        if len(input_ids) > max_seq_len:
+            max_seq_len = len(input_ids)
+
+    max_seq_len = min(max_seq_len, max_length)
+    input_ids_batch = []
+    labels_batch = []
+    attention_mask_batch = []
+
+    for sample in examples:
+        input_ids = sample["input_ids"]
+        labels = sample["labels"]
+        attention_mask = [1] * len(input_ids)
+        if len(input_ids) > max_seq_len:  # truncate
+            processed_input_ids = input_ids[:max_seq_len]
+            processed_labels = labels[:max_seq_len]
+            processed_attention_mask = attention_mask[:max_seq_len]
+        else:  # padding to right
+            processed_input_ids = input_ids + [tokenizer.pad_token_id] * (max_seq_len - len(input_ids))
+            processed_labels = labels + [-100] * (max_seq_len - len(input_ids))
+            processed_attention_mask = attention_mask + [0] * (max_seq_len - len(input_ids))
+
+        input_ids_batch.append(processed_input_ids)
+        labels_batch.append(processed_labels)
+        attention_mask_batch.append(processed_attention_mask)
+
+    return {
+        "input_ids": torch.tensor(input_ids_batch),
+        "labels": torch.tensor(labels_batch),
+        "attention_mask": torch.tensor(attention_mask_batch),
+    }
+
+
 def train():
     set_seed(100)
 
@@ -208,6 +258,9 @@ def train():
         train_dataset=train_ds,
         eval_dataset=valid_ds,
         args=training_args,
+        data_collator=lambda batch: collate_function(batch,
+                                                     tokenizer,
+                                                     max_length=model_args.model_max_length)
     )
 
     trainer.train()
