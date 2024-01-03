@@ -5,9 +5,9 @@ python -m training.training \
     --model_type llama \
     --use_lora True \
     --qlora True \
-    --bf16 False \
+    --bf16 True \
     --output_dir models/llm-algorithm \
-    --num_train_epochs 2 \
+    --num_train_epochs 1 \
     --per_device_train_batch_size 2 \
     --per_device_eval_batch_size 2 \
     --gradient_accumulation_steps 16 \
@@ -20,7 +20,7 @@ python -m training.training \
     --learning_rate 1.2e-5 \
     --lr_scheduler_type "cosine" \
     --logging_steps 1 \
-    --tf32 False \
-    --model_max_length 1024 \
+    --tf32 True \
+    --model_max_length 4096 \
     --gradient_checkpointing True \
     --packing False
