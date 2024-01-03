@@ -194,6 +194,8 @@ def collate_function(examples: List[Dict],
     for sample in examples:
         input_ids = sample["input_ids"]
         labels = sample["labels"]
+        input_ids = input_ids.tolist()
+        labels = labels.tolist()
         attention_mask = [1] * len(input_ids)
         if len(input_ids) > max_seq_len:  # truncate
             processed_input_ids = input_ids[:max_seq_len]
