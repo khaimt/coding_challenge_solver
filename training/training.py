@@ -151,9 +151,12 @@ def load_model(model_args: ModelArguments,
     model.gradient_checkpointing_enable()
 
     if model_args.qlora and model_args.use_lora:
+        print("Training with qLora")
         model = peft.prepare_model_for_kbit_training(model)
-    if model_args.use_lora:
+
         modules = find_all_linear_names(model)
+        print(f"Training with Lora, module will be adapted: {modules}")
+
         model = peft.get_peft_model(model, config_peft(modules))
 
     # Configure the pad token in the model
@@ -202,9 +205,10 @@ def collate_function(examples: List[Dict],
             processed_labels = labels[:max_seq_len]
             processed_attention_mask = attention_mask[:max_seq_len]
         else:  # padding to right
-            processed_input_ids = input_ids + [tokenizer.pad_token_id] * (max_seq_len - len(input_ids))
-            processed_labels = labels + [-100] * (max_seq_len - len(input_ids))
-            processed_attention_mask = attention_mask + [0] * (max_seq_len - len(input_ids))
+            num_tokens_padding = (max_seq_len - len(input_ids))
+            processed_input_ids = input_ids + [tokenizer.pad_token_id] * num_tokens_padding
+            processed_labels = labels + [-100] * num_tokens_padding
+            processed_attention_mask = attention_mask + [0] * num_tokens_padding
 
         input_ids_batch.append(processed_input_ids)
         labels_batch.append(processed_labels)
@@ -223,10 +227,6 @@ def train():
     arg_parser = HfArgumentParser((ModelArguments, DataArguments, TrainingArguments, TokenizerArguments))
 
     model_args, data_args, training_args, tokenizer_args = arg_parser.parse_args_into_dataclasses()
-    print("model_args: ", model_args)
-    print("data_args: ", data_args)
-    print("training_args: ", training_args)
-    print("tokenizer_args: ", tokenizer_args)
     tokenizer_args._model_name_or_path = model_args.model_name_or_path
     # load tokenizer
     tokenizer = load_tokenizer(tokenizer_args)
