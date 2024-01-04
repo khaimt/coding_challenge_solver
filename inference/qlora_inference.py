@@ -60,6 +60,8 @@ def main():
             with open(fp, "r") as f:
                 problem = f.read()
 
+                f.close()
+
             prompt_str = (
                 f"[INST] Write code to solve the following coding problem that obeys"
                 f"the constraints and passes the example test cases."
