@@ -52,12 +52,14 @@ def main():
             return output.split("[/INST]")[-1]
 
     while True:
-        problem = input("Enter problem: (type 'q' to quit): ")
-
-        if problem.lower() == 'q':
-
+        fp = input("Enter path to problem file: ")
+        fp = fp.strip()
+        if fp.lower() == 'q':
             break
         else:
+            with open(fp, "r") as f:
+                problem = f.read()
+
             prompt_str = (
                 f"[INST] Write code to solve the following coding problem that obeys"
                 f"the constraints and passes the example test cases."
@@ -75,6 +77,7 @@ def main():
             print(solution)
             print()
             print()
+
 
 if __name__ == '__main__':
     main()
