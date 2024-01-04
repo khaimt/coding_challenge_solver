@@ -19,8 +19,8 @@ class AlgoDataset(Dataset):
         self.prompt_template = prompt_template
         self.algo_data = self.load_algo_dataset()
         print("Length of algo dataset: ", len(self.algo_data))
-        # self.training_data = self.convert_to_training_data()
-        self.training_data = self.convert_to_prompt_data()
+        self.training_data = self.convert_to_training_data()
+        # self.training_data = self.convert_to_prompt_data()
 
     def __len__(self):
         return len(self.training_data)
@@ -56,7 +56,6 @@ class AlgoDataset(Dataset):
                                                                     padding="longest",
                                                                     max_length=self.max_seq_len,
                                                                     return_tensor=True)
-            print("examples: ", examples)
             training_data.extend(examples)
 
         return training_data
