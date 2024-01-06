@@ -8,6 +8,7 @@ from bs4 import BeautifulSoup
 
 def crawl_desc_leetcode_url(url: str) -> str:
     """Crawl algorithm description from leetcode"""
+    url = url.strip()
     if "leetcode.com" not in url:
         raise ValueError(
             f"Please input url to leetcode problem. "
