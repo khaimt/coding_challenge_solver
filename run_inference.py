@@ -12,8 +12,8 @@ def crawl_desc_leetcode_url(url: str) -> Union[str, None]:
     url = url.strip()
     if "leetcode.com" not in url:
         raise ValueError(
-            f"Please input url from leetcode. "
-            f"For example: 'https://leetcode.com/problems/regular-expression-matching/")
+            "Please input url from leetcode. "
+            "For example: 'https://leetcode.com/problems/regular-expression-matching/")
     response = requests.get(url)
     response.raise_for_status()
     response.encoding = "utf-8"
