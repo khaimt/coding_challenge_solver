@@ -35,7 +35,7 @@ def crawl_desc_leetcode_url(url: str) -> Union[str, None]:
         return None
 
 
-def main(leetcode_url: str = None, input_file: str = None, model_path: str = "khaimaitien/leetcode_solver_7b"):
+def main(leetcode_url: str = "", input_file: str = "", model_path: str = "khaimaitien/leetcode_solver_7b"):
     """
     Run the inference from url or input file
     Args:
@@ -46,18 +46,19 @@ def main(leetcode_url: str = None, input_file: str = None, model_path: str = "kh
     Returns:
 
     """
-    print("model_path: ", model_path)
-    if leetcode_url is None and input_file is None:
+    leetcode_url = leetcode_url.strip()
+    input_file = input_file.strip()
+    if len(leetcode_url) > 0 and len(input_file) > 0:
         typer.echo("Please provide leetcode URL or input file!", err=True, color=True)
         return None
     prompt_template = get_prompt_template_by_name("code_llama")
     algo_input = None
-    if input_file is not None:
+    if len(input_file) > 0:
         # read the leetcode problem from input_file
         with open(input_file, "r") as f:
             algo_input = f.read()
 
-    if leetcode_url is not None:
+    if len(leetcode_url) > 0:
         algo_input = crawl_desc_leetcode_url(leetcode_url)
 
     if algo_input is None:
@@ -80,7 +81,7 @@ def main(leetcode_url: str = None, input_file: str = None, model_path: str = "kh
     token_ids = token_ids.to(model.device)
     outputs = model.generate(input_ids=token_ids, max_new_tokens=1024, do_sample=True, temperature=0.0001)
     all_token_ids = outputs[0].tolist()
-    output_token_ids = all_token_ids[token_ids.shape[-1] :]
+    output_token_ids = all_token_ids[token_ids.shape[-1]:]
     output = tokenizer.decode(output_token_ids)
     print("\n\n\n==============================Solution generated from Model==============================\n")
 
@@ -88,5 +89,4 @@ def main(leetcode_url: str = None, input_file: str = None, model_path: str = "kh
 
 
 if __name__ == "__main__":
-
     typer.run(main)
