@@ -17,15 +17,18 @@ First you need to install the requirements:
 ```
 pip install -r requirements.txt
 ```
-you can use this script to run inference:
-```
-python run_inference.py test_cases/problem1.txt --model-path khaimaitien/leetcode_solver_7b
-```
 
-Where first parameter is the leetcode problem stored in a text file, you can take a look at the format in **test_cases/problem1.txt** 
+### There are 2 options to run inference
 
+#### Option 1: Run inference from input file.
+
+```bash
+python run_inference.py --input-file test_cases/problem1.txt --model-path khaimaitien/leetcode_solver_7b
+```
+_Where first parameter is the leetcode problem stored in a text file, you can take a look at the format in **test_cases/problem1.txt**_ 
+    
 Here is the output from above command:
-```python 
+``` python
 class Solution:
     def isUgly(self, n: int) -> bool:
         if n == 1:
@@ -39,5 +42,40 @@ class Solution:
         if n % 5 == 0:
             return self.isUgly(n // 5)
         return False
-```</s>
+```
+
+
+#### Option 2: Run inference from leetcode URL.
+  
+```bash
+ python run_inference.py --leetcode-url https://leetcode.com/problems/merge-k-sorted-lists/ --model-path khaimaitien/leetcode_solver_7b
+```
+
+Here is the output from above command:
+``` python
+class Solution:
+    def mergeKLists(self, lists: List[ListNode]) -> ListNode:
+        if not lists:
+            return None
+        return self.merge(lists)
+    
+    def merge(self, lists):
+        if len(lists) == 1:
+            return lists[0]
+        mid = len(lists) // 2
+        l1 = self.merge(lists[:mid])
+        l2 = self.merge(lists[mid:])
+        return self.mergeTwoLists(l1, l2)
+    
+    def mergeTwoLists(self, l1, l2):
+        if not l1:
+            return l2
+        if not l2:
+            return l1
+        if l1.val < l2.val:
+            l1.next = self.mergeTwoLists(l1.next, l2)
+            return l1
+        else:
+            l2.next = self.mergeTwoLists(l1, l2.next)
+            return l2
 ```
