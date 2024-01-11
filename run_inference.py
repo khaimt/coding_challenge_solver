@@ -13,20 +13,21 @@ def crawl_desc_leetcode_url(url: str) -> Union[str, None]:
     if "leetcode.com" not in url:
         raise ValueError(
             "Please input url from leetcode. "
-            "For example: 'https://leetcode.com/problems/regular-expression-matching/")
+            "For example: 'https://leetcode.com/problems/regular-expression-matching/"
+        )
     response = requests.get(url)
     response.raise_for_status()
     response.encoding = "utf-8"
     html = response.text
     if html:
-        soup = BeautifulSoup(html, 'html.parser')
+        soup = BeautifulSoup(html, "html.parser")
 
         # Find the meta tag with name="description"
-        meta_description = soup.find('meta', attrs={'name': 'description'})
+        meta_description = soup.find("meta", attrs={"name": "description"})
 
         # Extract the content attribute value
         if meta_description:
-            content_value = meta_description.get('content')
+            content_value = meta_description.get("content")
             return content_value
         else:
             return None
@@ -79,7 +80,7 @@ def main(leetcode_url: str = None, input_file: str = None, model_path: str = "kh
     token_ids = token_ids.to(model.device)
     outputs = model.generate(input_ids=token_ids, max_new_tokens=1024, do_sample=True, temperature=0.0001)
     all_token_ids = outputs[0].tolist()
-    output_token_ids = all_token_ids[token_ids.shape[-1]:]
+    output_token_ids = all_token_ids[token_ids.shape[-1] :]
     output = tokenizer.decode(output_token_ids)
     print("\n\n\n==============================Solution generated from Model==============================\n")
 
