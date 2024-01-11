@@ -81,7 +81,7 @@ def main(leetcode_url: str = "", input_file: str = "", model_path: str = "khaima
     token_ids = token_ids.to(model.device)
     outputs = model.generate(input_ids=token_ids, max_new_tokens=1024, do_sample=True, temperature=0.0001)
     all_token_ids = outputs[0].tolist()
-    output_token_ids = all_token_ids[token_ids.shape[-1]:]
+    output_token_ids = all_token_ids[token_ids.shape[-1] :]
     output = tokenizer.decode(output_token_ids)
     print("\n\n\n==============================Solution generated from Model==============================\n")
 
